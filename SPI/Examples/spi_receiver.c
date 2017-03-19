@@ -8,23 +8,24 @@
 
 mySPI spi;
 void led(void);
+const uchar data[] = {0x12, 0x36, 0x11};
 ISR(SPI_STC_vect){
-	
-	if(spi_read_byte() == 0x12){
+	uchar buf[3];
+	spi_passive_receive(buf ,3);
+	if(buf[0] == 0x12 && buf[1]==0x36 &&buf[2] == 0x11){
 		led();
 	}
 }
 
 
 int main(){
-	init_spi(&spi);
-	setup_spi(&spi);
-	config_spi_operating_mode(&spi, SLAVE);
-	
+	init_spi();
+	setup_spi();
+	config_spi_operating_mode(SLAVE);
 	led();
 	sei();
-	config_spi_enable(&spi, TRUE);
-	config_spi_interrupt(&spi, TRUE);
+	config_spi_enable(TRUE);
+	config_spi_interrupt(TRUE);
 	while(1);
 	return 0;
 }

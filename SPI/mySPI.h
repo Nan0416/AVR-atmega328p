@@ -1,7 +1,6 @@
 #ifndef __MY_SPI
 #define __MY_SPI
 
-
 #include <avr/io.h>
 #include "_common.h"
 #define _MAX_SLAVE 8
@@ -47,26 +46,37 @@ typedef struct mySPI{
 	
 }mySPI;
 
+extern mySPI spi;
 
+void init_spi();
 
-void init_spi(mySPI * spi);
-void setup_spi(mySPI * spi);
+void setup_spi(void);
 
-void config_spi_enable(mySPI * spi, BOOL on);
-void _config_spi_slave(mySPI * spi, PIN_ADDR _ss[], uint8_t num);
-void config_spi_interrupt(mySPI* spi, BOOL enabled);
-void config_spi_data_mode(mySPI* spi, SPI_DATA_MODE data_mode);
-void _config_spi_data_rate(mySPI* spi, SPI_DATA_RATE data_rate);
-void config_spi_operating_mode(mySPI* spi, SPI_OPERATING_MODE _op_mode);
-void config_spi_data_order(mySPI* spi, SPI_DATA_ORDER _order);
+void config_spi_child(uint8_t spi_id, uint8_t value);
+void config_spi_enable(BOOL on);
+void config_spi_interrupt(BOOL enabled);
+void config_spi_data_mode(SPI_DATA_MODE data_mode);
+void _config_spi_data_rate(SPI_DATA_RATE data_rate);
+void config_spi_operating_mode(SPI_OPERATING_MODE _op_mode);
+void spi_read_buffer2(uint8_t spi_id,  uint8_t data[], uint8_t len);
+void config_spi_data_order(SPI_DATA_ORDER _order);
+void _config_spi_slave(PIN_ADDR _ss[], uint8_t num);
 
-/* read */
 uint8_t spi_clear_flag(void);
-//uint8_t spi_transfer(uint8_t data);
-uint8_t spi_transfer_byte(mySPI* spi, uint8_t to, uint8_t data);
-void spi_transfer_buffer(mySPI* spi, uint8_t to, uint8_t send[], uint8_t recv[], uint8_t len);
+
+uint8_t spi_transfer(uint8_t data);
 uint8_t spi_read_byte(void);
 
+uint8_t spi_exchange_one_byte(uint8_t spi_id, uint8_t value);
+uint8_t spi_exchange_two_bytes(uint8_t spi_id, uint8_t cmd, uint8_t value);
 
+void spi_read_buffer(uint8_t spi_id,  uint8_t data[], uint8_t len);
+void spi_write_buffer(uint8_t spi_id, const uint8_t data[], uint8_t len);
+
+uint8_t spi_write_cmd_buffer(uint8_t spi_id, uint8_t cmd, const uint8_t buf[], uint8_t data_len, uint8_t pack_len);
+uint8_t spi_read_cmd_buffer(uint8_t spi_id, uint8_t cmd, uint8_t data[], uint8_t data_len, uint8_t pack_len);
+
+uint8_t spi_passive_receive(uint8_t buf[], uint8_t len);
+uint8_t spi_data_available(void);
 
 #endif

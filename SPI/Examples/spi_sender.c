@@ -8,16 +8,15 @@
 
 mySPI spi;
 int main(){
-	init_spi(&spi);
-	setup_spi(&spi);
-	config_spi_enable(&spi, TRUE);
+	init_spi();
+	setup_spi();
+	config_spi_enable(TRUE);
 	
-	uchar data = 0x12;
+	const uchar data[] = {0x12, 0x36, 0x11};
 	while(1){
-		//PORTB &= ~0x02;
-		spi_transfer_byte(&spi, 0, data);
+	
 		_delay_ms(1000);
-		//PORTB |= 0x02;
+		spi_write_buffer(0, data, 3);
 		
 		
 	}

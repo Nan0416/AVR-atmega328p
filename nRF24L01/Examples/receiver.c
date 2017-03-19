@@ -21,35 +21,38 @@ uint8_t compare(uint8_t d1[], uint8_t d2[] , uint8_t len);
 
 
 
-NRF24L01P config;
-
-
+NRF24L01P rf24;
+mySPI spi;
+myEXT ext;
 
 ISR(INT0_vect){
 	let_indicator();
 	memset(data, 0x00, 20);
-	recv(&config, data, 20);
+	recv(data, 20);
 	if(compare(answer, data, 4) == 1){
 		let_indicator_fast();
 	}
+	//clear_ext_irq_flag(&ext);
 }
 
 
 int main(){	
+	init_spi();
+	init_rf24l01p();
+	init_ext(&ext);
+	setup_ext(&ext);
+	config_ext_mode(&ext, FALLING_EDGE);
+	config_ext_enable(&ext, TRUE);
 	
-	init_rf24l01p(&config);
 	setup_spi();
-	setup_rf24l01p(&config);
+	config_spi_enable(TRUE);
+	
+	setup_rf24l01p();
 	/* customize your nrf24l01+ with config_ functions */
-	
-	
-	
 	
 	uint8_t addr [] =  {0x30, 0x30, 0x30, 0x30, 0x31};
 	
-	
-	config_listening_addr(&config, addr);
-	setup_external_interrupt(EXT_INT_0, FALLING_EDGE);
+	config_listening_addr(addr);
 	sei();
 	while(1);
 	return 0;

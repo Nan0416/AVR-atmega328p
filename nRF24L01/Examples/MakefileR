@@ -1,0 +1,8 @@
+all:recv_main.flash.hex
+	avrdude -p m328p -c stk500v1 -b 57600 -P /dev/ttyUSB0 -U flash:w:recv_main.flash.hex
+recv_main.flash.hex: recv_main.elf
+	avr-objcopy -j .text -j .data -O ihex recv_main.elf recv_main.flash.hex
+recv_main.elf: recv.o 
+	avr-gcc -mmcu=atmega328p -o recv_main.elf recv.o  -L. -lSPI -lRF24 -lEXT
+recv.o: receiver.c
+	avr-gcc -Wall -O1 -c -o recv.o -mmcu=atmega328p receiver.c
