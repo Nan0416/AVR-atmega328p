@@ -1,0 +1,2 @@
+all: main.flash.hex
+	avrdude -p m328p -c stk500v1 -b 57600 -P /dev/ttyUSB0 -U flash:w:main.flash.hex 

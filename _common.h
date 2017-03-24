@@ -37,6 +37,11 @@ typedef struct PIN_ADDR{
 	MEGA_PIN pin;
 }PIN_ADDR;
 
+typedef enum pin_type{
+	port,
+	pin
+}pin_type;
+
 typedef enum BOOL_{
 	TRUE,
 	FALSE
