@@ -153,8 +153,8 @@ void _bit_reader_helper(uint8_t * data, uint8_t position, MEGA_PORT _port, MEGA_
 }
 void lcd_update_line(lcd_show_data * data, uint8_t line, uint8_t direction, uint8_t step){
 	/* windows goes that direction */
-	CLEAR;
-	CLEAR_SCREEN;
+	//CLEAR;
+	//CLEAR_SCREEN;
 	lcd_write(LCD_CMD, 0x06);
 	if(line == LCD_LINE_1){
 		lcd_write(LCD_CMD, 0x80);

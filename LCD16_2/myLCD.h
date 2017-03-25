@@ -27,7 +27,7 @@
  * 
  * **/
 
-typedef void (*fp)(void); 
+
 typedef union lcd_pin_assignment{
 	PIN_ADDR data_pins[8];
 	MEGA_PORT port;
