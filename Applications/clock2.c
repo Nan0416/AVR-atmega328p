@@ -5,12 +5,11 @@
 #define START_YEAR 2001
 #define START_DATE 1 // 2001 Jan 1 is Monday
 
-#define TIME_OFFSET 8
-#define WEEK_OFFSET 3
+#define TIME_OFFSET 6
+#define WEEK_OFFSET 1
 #define MONTH_DISPLAY_OFFSET 2
-#define DAY_OFFSET 7
-#define YEAR_OFFSET 10
-#define SEP_OFFSET 11
+#define DAY_OFFSET 6
+#define YEAR_OFFSET 9
 #include "alarm.h"
 #include "myLCD.h"
 #include <stdint.h>
@@ -37,8 +36,6 @@ void update_day(_time * time, uint8_t target);
 void generate_str(_time * time, char time_[], char date[]);
 char *month[] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "OCT", "NOV", "DEC"};
 char *week[] = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-
-uint8_t flag;
 void led(){
 		DDRB |= 0x20;
 		PORTB |= 0x20;
@@ -49,28 +46,18 @@ void led(){
 }
 ISR(TIMER0_COMPA_vect){
 	alarm_s(1);
-	if(time.second == 0 || flag == 3){
-		flag = 0;
-		CLEAR;
-		CLEAR_SCREEN;
-		generate_str(&time, time_, date);
-		lcd_update_line(&line1, LCD_LINE_1, LCD_RIGHT, 0);
-		lcd_update_line(&line2, LCD_LINE_2, LCD_RIGHT, 0);
-	}else{
-		if(flag){
-			flag = 0;
-			 lcd_change_one_byte(':', 1, SEP_OFFSET);
-		}else{
-			flag = 1;
-			 lcd_change_one_byte(' ', 1, SEP_OFFSET);
-		}
-		
-	}
+	//led();
+	
+	//lcd_show_num(time.second, 0);
+	CLEAR;
+	CLEAR_SCREEN;
+	generate_str(&time, time_, date);
+	lcd_update_line(&line1, LCD_LINE_1, LCD_RIGHT, 0);
+	lcd_update_line(&line2, LCD_LINE_2, LCD_RIGHT, 0);
 	update_1_s();
 }
 int main(){
 	uint8_t i = 0;
-	flag = 3;
 	for(; i < 16; i++){
 		time_[i] = ' ';
 		date[i] = ' ';
@@ -93,7 +80,7 @@ int main(){
 }
 
 void init_time(void){
-	time.second = 55;
+	time.second = 0;
 	time.minute = 35;
 	time.hour = 21;
 	time.day = 24;
@@ -191,16 +178,24 @@ void generate_str(_time * time, char time_[], char date[]){
 		itoa(time->minute, temp ,10);
 		time_[TIME_OFFSET+3] = temp[0];
 		time_[TIME_OFFSET+4] = temp[1];
-		
+		time_[TIME_OFFSET+5] = ':';
 	}else{
 		time_[TIME_OFFSET+3] = '0';	
 		itoa(time->minute, &temp_1,10);
 		time_[TIME_OFFSET+4] = temp_1;
-		
+		time_[TIME_OFFSET+5] = ':';
 	}
 	
 	
-	
+	if(time->second > 9){
+		itoa(time->second, temp ,10);
+		time_[TIME_OFFSET+6] = temp[0];
+		time_[TIME_OFFSET+7] = temp[1];
+	}else{
+		time_[TIME_OFFSET+6] = '0';
+		itoa(time->second, &temp_1,10);
+		time_[TIME_OFFSET+7] = temp_1;
+	}
 	
 	if(time->day > 9){
 		itoa(time->day, temp ,10);
