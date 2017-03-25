@@ -1,77 +1,4 @@
-#ifndef F_CPU 
-#define F_CPU 16000000UL
-#endif
-#include <avr/io.h>
-#include "_common.h"
-#include <avr/interrupt.h>
-#include <util/delay.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-#define LCD_CMD 0
-#define LCD_DATA 1
-#define LCD_LINE_MAX 40
-#define LCD_SHOW_LINE_MAX 16
-#define LCD_LINES 2
-#define CLEAR lcd_write(LCD_CMD, 0x02);_delay_ms(10) // reset data pointer
-#define CLEAR_SCREEN lcd_write(LCD_CMD, 0x01);_delay_ms(10)
-
-/**
- * LCD cannot read in control register's data
- * 
- * 
- * 
- * **/
-
-typedef void (*fp)(void); 
-typedef union lcd_pin_assignment{
-	PIN_ADDR data_pins[8];
-	MEGA_PORT port;
-}lcd_pin_assignment;
-
-typedef enum CURSOR{
-	OFF = 0,
-	FLUSH = 1,
-	ON = 2
-}CURSOR;
-
-typedef struct myLCD{
-	PIN_ADDR ce;
-	PIN_ADDR rw;
-	PIN_ADDR cmd_data;
-	pin_type data_port_type;
-	lcd_pin_assignment data_addr;
-	CURSOR cursor;
-	uint8_t show_on;
-}myLCD;
-
-typedef struct lcd_show_data{
-	const char * data;
-	uint32_t beginning;
-	uint32_t data_len;
-}lcd_show_data;
-
-myLCD lcd;
-void led(){
-	DDRB |= 0x20;
-	PORTB |= 0x20;
-	_delay_ms(1000);
-	PORTB &= ~0x20;
-	_delay_ms(1000);
-}
-
-
-/***********/
-void init_lcd();
-void setup_lcd();
-void config_show(uint8_t on, CURSOR status);
-void config_pin(PIN_ADDR lcd_pin, uint8_t value);
-void lcd_write(uint8_t cmd_data_s, uint8_t value);
-void write_out(uint8_t data);
-void _bit_writer_helper(uint8_t  data, uint8_t position, MEGA_PORT _port, MEGA_PIN _pin);
-uint8_t read_in(void);
-void _bit_reader_helper(uint8_t * data, uint8_t position, MEGA_PORT _port, MEGA_PIN _pin);
-/***********/
+#include "myLCD.h"
 void init_lcd(){
 	lcd.ce.port = PD;
 	lcd.ce.pin = P6;
@@ -104,13 +31,13 @@ void init_lcd(){
 }
 
 void setup_lcd(){
-	_delay_ms(15);
+	_delay_ms(5);
 	lcd_write(LCD_CMD, 0x38);
-	_delay_ms(64); // 5ms
+	_delay_ms(5); // 5ms
 	lcd_write(LCD_CMD, 0x38);
-	_delay_ms(50); // 5ms
+	_delay_ms(5); // 5ms
 	lcd_write(LCD_CMD, 0x38);
-	_delay_ms(20); // 5ms
+	_delay_ms(5); // 5ms
 	lcd_write(LCD_CMD, 0x01);  // clear the screen
 	config_show(0, OFF);
 	CLEAR_SCREEN;
@@ -224,41 +151,43 @@ void _bit_reader_helper(uint8_t * data, uint8_t position, MEGA_PORT _port, MEGA_
 	*data = (*data & ~_BV(position)) | (data_temp << position);
 
 }
-/* useful for two independent data */
-void lcd_rolling_perpendicular(const char * data, uint8_t len, uint8_t initial_line, uint8_t repeat){
-	lcd_write(LCD_CMD, 0x06); // pointer auto add 1
-	uint8_t show_end = 0;
-	uint8_t i = 0;
-	if(initial_line == 1){
+void lcd_update_line(lcd_show_data * data, uint8_t line, uint8_t direction, uint8_t step){
+	/* windows goes that direction */
+	CLEAR;
+	CLEAR_SCREEN;
+	lcd_write(LCD_CMD, 0x06);
+	if(line == LCD_LINE_1){
 		lcd_write(LCD_CMD, 0x80);
-		show_end = (len - 2* LCD_LINE_MAX) > 0 ? 2 * LCD_LINE_MAX: len;
-		for(; i < show_end; i++){
-			if(i > 0x27){
-				break;
+	}else if(line == LCD_LINE_2){
+		lcd_write(LCD_CMD, 0xc0);
+	}
+	uint8_t end;
+	uint8_t begin = data->beginning;
+	uint8_t i = 0;
+	if(direction == LCD_RIGHT){
+		begin += step;
+		end = _min(data->beginning + LCD_SHOW_LINE_MAX, data->data_len);
+		if(begin < data->data_len){
+			data->beginning = begin;
+			for(i = begin; i < end; i++){
+				lcd_write(LCD_DATA, data->data[i]);
 			}
-			lcd_write(LCD_DATA, data[i]);
+			
 			
 		}
-		if(i == 0x28){
-			lcd_write(LCD_CMD, 0xC0);
-			for(; i< show_end; i++){
-				lcd_write(LCD_DATA, data[i]);
+	}else if(direction == LCD_LEFT){
+		begin -= step;
+		end = _min(data->beginning + LCD_SHOW_LINE_MAX, data->data_len);
+		if(begin >= 0){
+			data->beginning = begin;
+			for(i = begin; i < end; i++){
+				lcd_write(LCD_DATA, data->data[i]);
 			}
 		}
-	
-	}else{
-		lcd_write(LCD_CMD, 0xC0);
-		show_end = (len -  LCD_LINE_MAX) > 0 ? LCD_LINE_MAX: len;
-		for(; i < show_end; i++){
-			lcd_write(LCD_DATA, data[i]);
-		}
 	}
-	
-	
 }
 
-
-void update_vertical(lcd_show_data * data){
+void lcd_update_vertical(lcd_show_data * data){
 	CLEAR;
 	CLEAR_SCREEN;
 	lcd_write(LCD_CMD, 0x06); // pointer auto add 1
@@ -294,7 +223,7 @@ void lcd_change_one_byte(char u, uint8_t row, uint8_t col){
 	lcd_write(LCD_DATA, u);
 
 }
-void lcd_show_num(int num){
+void lcd_show_num(int num, int delay_ms){
 	CLEAR;
 	CLEAR_SCREEN;
 	char *s;
@@ -310,27 +239,14 @@ void lcd_show_num(int num){
 		s = (char *) malloc(1);
 	}
 	itoa(num,s,10);
-	lcd_rolling_perpendicular(s, data_len, 1, 0);
-	
-}
-int main(){
-	init_lcd();
-	led();
-	setup_lcd();
-	const char * data = "In computer user interfaces, a cursor is an indicator used to show the current position for user interaction on a computer monitor or other display device that will respond to input from a text input or pointing device. The mouse";// cursor is also called a pointer, owing to its resemblance in usage to a pointing stick.";
-	config_show(1, FLUSH);
-	
 	lcd_show_data msg;
-	msg.data = data;
+	msg.data_len = data_len;
+	msg.data = s;
 	msg.beginning = 0;
-	msg.data_len = strlen(data);
-	//lcd_rolling_perpendicular(data, 70, 1, 0);
-	while(msg.data_len - msg.beginning > 0 ){
-		lcd_show_num(msg.data_len - msg.beginning);
-		_delay_ms(1000);
-		update_vertical(&msg);
-		_delay_ms(2000);
+	lcd_update_line(& msg, LCD_LINE_1, LCD_RIGHT, 0);
+	while(delay_ms --){
+		_delay_ms(1);
 	}
-	while(1);
+	free(s);
 	
 }
