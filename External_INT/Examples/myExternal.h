@@ -1,1 +1,0 @@
-/home/nan/Documents/avr/avrProject/rf24l01Final/v2_revise/External_INT/myExternal.h

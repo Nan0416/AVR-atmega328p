@@ -7,6 +7,8 @@
 
 #define SPI_DATA_AVAILABLE SPSR & _BV(SPIF)
 
+//when setting as master, we use 
+
 typedef enum SPI_DATA_ORDER{
 	MSB,
 	LSB
